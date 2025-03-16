@@ -25,3 +25,24 @@ This can point to relevant appln level improvements that we can make.
 * For computation heavy systems, we may choose to increase the number of threads frequently
     * this can lead to contention and consume CPU time in context switching and scheduling
     * Response time will take a hit as CPU scheduler time increases.    
+
+## Request from A to C takes more time than B to C
+
+| Phase | Comment |
+| ----- | ------- |
+| Question | Why does request from A to C take longer than B to C |
+| Hypothesis | A and B are in different data centers |
+| Prediction | Moving both to same might solve the issue |
+| Test | Move host A and check perf |
+| Analysis | Perf fixed - consistent with hypothesis. |
+
+`If the hypothesis wasn't correct then I would first move the device back to
+its place as I don't want multiple variables in my perf analysis.`
+
+## how to analyse resource saturation?
+* We can probably look at `run-queue-length`
+* Look at memory `swapping`, `oom-killer`
+* Linux `overruns`
+
+## Why are failed malloc/callocs a rarity on Linux?
+* This is because Linux overcommits and keeps adjusting.

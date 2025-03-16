@@ -177,4 +177,122 @@ it until that problem goes away
 `This should the first thing to do when assigned a perf issue`
 
 ## Scientific Method
+This consists of the following phases - 
+
+| Phases |
+| ---- |
+| Question |
+| Hypothesis |
+| Prediction |
+| Test |
+| Analyse |
+
+* The hypothesis might turn out to be incorrect during analysis
+    * We still have the benefit of eliminating huge components and iterate again.
+
+## The USE method
+* For every resource check utilization, saturation and errors.
+* The benefit of this method over a blind tools check method is that we will
+have a list of questions first that we need to target
+    * Now we can try to find relevant tools to approach those questions.
+    * Even if we don't have the right tools, we have atleast switched to a
+    Known-Unknowns stage.
+
+`dont include hardware cache in USE method analysis as caches improve perf with
+increased utilization while USE method analyses perf degradation on increased utilization.`
+
+### Use method on Software resources
+* Mutex locks
+
+| Metric | Behavior |
+| ----- | ---- |
+| Utilization | the time the lock was held |
+| Saturation | the threads queued waiting for locks |
+
+## The RED method
+
+| Metric | Info |
+| --- | --- |
+| RequestRate | RPS |
+| Error | requests failed |
+| Duration | time for req completion |
+
+### Why USE for Machine Health and RED for User Health?
+* Machines (hardware, infrastructure) suffer from resource exhaustion, so monitoring utilization, saturation, and errors is key.
+* Users care about request rates, failures, and response times, making RED more relevant.
+
+* Request rate provides an early clue about the performance.
+    * if the rate is same but duration has increased, then it points at a problem with the `architecture`.
+    * If both load and duration increased, then it points at a `load` issue.
+
+## Workload characterization
+* helps in identifying issues due to load applied.
+    * focusses only on the input load rather than eventual performance.
+
+### Questions
+1. Who is causing the load? UID/PID/Remote IP?
+2. Load characteristics - IOPS, Throughput, direction (R/W)
+3. How does load change over time?
+
+## Drill Down Analysis
+* Starts at a high level and gradually drills down
+* Eliminate uninteresting findings as we drill down
+
+### Stages
+* Monitoring
+    * Keep monitoring and generate alert in case of issues.
+* Identification
+    * Scope of the affected components gets narrowed down based on the alerts.
+* Analysis
+    * Further analysis for RCA
+
+### Netflix example
+| stage | comments |
+| --- | --- |
+| monitoring | Atlas identifies the microservice seeing the problem |
+| identification | perfdash narrows the problem to a resource | 
+| analysis | flamecommander shows codepaths causing the problems |
+
+## Latency Analysis
+* Analyzing the time taken to complete an operation in a layered manner
+* Start with the main operation and keep dividing it into sub operations
+    * Workload -> Application -> System Libraries -> Syscalls -> the kernel -> device drivers
+
+### MySQL latency analysis
+* Is this a query latency issue? Yes
+* Is the latency spent mostly on-cpu or off-cpu? off cpu
+* What is the off cpu time spent waiting for? file system i/o
+* Is the file I/O because of disk I/O or lock contention? disk I/O
+* Is the disk I/O spent on queuing or servicing the I/O ? servicing
+* Is the disk service time mostly I/O init or data transfer? (data transfer) 
+
+## Baseline Statistics
+### Approach 1: Extra lines in visualization
+* Netflix dashboards have an extra line to show the same time range for the previous week
+* 3PM today can then be directly compared with 3PM of the previous week.
+
+### Approach 2: Capture for future reference
+* Capture a lot of information using shell scripts and tools.
+    * A lot more than usual monitoring.
+* Capture these periodically but also whenever an application state changes so that differences can be captured.
+
+## Static Performance Tuning
+* Issues to deal with in absence of workload.
+### Examples
+* Network interface - 1Gbps configured instead of 10Gbps
+* A costly debug session left open
+* Remote auth instead of local
+* Disk almost full
+* Mismatch FS record size compared to load
+
+## Statistics
+### Geometric mean
+* This is useful when we are fixing something in layers as we tend to have a multiplicative impact there
+* This happens since all layers contribute to a packets performance
+
+### harmonic mean
+* this accounts  for cases such as rates
+    * Example - for an 800MB data transfer, the first 100MB might be sent at 50MB/s while the rest might be sent at throttled 10Mpbs
+    * Harmonic mean assigns more weight to the lower rate accordingly.
+        * overall - 800/(100/50 + 700/10) = 11.1Mbps
 
